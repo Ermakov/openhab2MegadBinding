@@ -87,6 +87,13 @@ public class MegaDBindingConstants {
     public static final String CHANNEL_PAR0 = "par0";
     public static final String CHANNEL_PAR1 = "par1";
     public static final String CHANNEL_PAR2 = "par2";
+    public static final String CHANNEL_PAR3 = "par3";
+    public static final String CHANNEL_PAR4 = "par4";
+    public static final String CHANNEL_PAR5 = "par5";
+    public static final String CHANNEL_PAR6 = "par6";
+    public static final String CHANNEL_PAR7 = "par7";
+    public static final String CHANNEL_PAR8 = "par8";
+    public static final String CHANNEL_PAR9 = "par9";
     public static final String CHANNEL_I2CRAW = "i2craw";
 
     // rs485 sdm120
