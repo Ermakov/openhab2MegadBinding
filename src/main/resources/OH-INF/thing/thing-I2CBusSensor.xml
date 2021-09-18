@@ -16,6 +16,13 @@
 			<channel id="par0" typeId="par0"/>
 			<channel id="par1" typeId="par1"/>
 			<channel id="par2" typeId="par2"/>
+			<channel id="par3" typeId="par3"/>
+			<channel id="par4" typeId="par4"/>
+			<channel id="par5" typeId="par5"/>
+			<channel id="par6" typeId="par6"/>
+			<channel id="par7" typeId="par7"/>
+			<channel id="par8" typeId="par8"/>
+			<channel id="par9" typeId="par9"/>
 			<channel id="i2craw" typeId="i2craw"/>
 		</channels>
 
