@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2021 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -52,12 +52,12 @@ public class MegaDPortsHandler extends BaseThingHandler {
     private Logger logger = LoggerFactory.getLogger(MegaDPortsHandler.class);
 
     private @Nullable ScheduledFuture<?> refreshPollingJob;
-
     @Nullable
     MegaDBridgeDeviceHandler bridgeDeviceHandler;
     protected long lastRefresh = 0;
     boolean startup = true;
     protected int dimmervalue = 150;
+    int smooth;
 
     public MegaDPortsHandler(Thing thing) {
         super(thing);
@@ -99,13 +99,29 @@ public class MegaDPortsHandler extends BaseThingHandler {
             if (!command.toString().equals("REFRESH")) {
                 try {
                     int uivalue = Integer.parseInt(command.toString().split("[.]")[0]);
-                    int resultInt = (int) Math.round(uivalue * 2.55);
-                    if (uivalue == 1) {
-                        resultInt = uivalue;
-                    } else if (resultInt != 0) {
-                        dimmervalue = resultInt;
+                    int resultInt = 0;
+                    if (uivalue != 0) {
+                        int minval = Integer.parseInt(getThing().getConfiguration().get("min_pwm").toString());
+                        double getDiff = (255.0 - minval) / 100.0;
+                        int corrVal = (int) Math.round(uivalue * getDiff);
+                        resultInt = corrVal + minval;
+
+                        if (uivalue == 1) {
+                            if (minval != 0) {
+                                resultInt = minval;
+                            } else {
+                                resultInt = uivalue;
+                            }
+                        } else if (resultInt != 0) {
+                            dimmervalue = resultInt;
+                        }
                     }
-                    assert bridgeDeviceHandler != null;
+                    if (isLinked(getThing().getChannel(MegaDBindingConstants.CHANNEL_SMOOTH).getUID().getId())) {
+                        logger.debug("Smooth linked");
+                    } else {
+                        logger.debug("Smooth unlinked");
+                    }
+
                     result = "http://" + bridgeDeviceHandler.getThing().getConfiguration().get("hostname").toString()
                             + "/" + bridgeDeviceHandler.getThing().getConfiguration().get("password").toString()
                             + "/?cmd=" + getThing().getConfiguration().get("port").toString() + ":" + resultInt;
@@ -144,7 +160,6 @@ public class MegaDPortsHandler extends BaseThingHandler {
             if (!command.toString().equals("REFRESH")) {
                 try {
                     int uivalue = Integer.parseInt(command.toString().split("[.]")[0]);
-                    // int resultInt = (int) Math.round(uivalue * 2.55);
                     if (uivalue != 0) {
                         dimmervalue = uivalue;
                     }
@@ -161,11 +176,6 @@ public class MegaDPortsHandler extends BaseThingHandler {
                             + "/?cmd=" + getThing().getConfiguration().get("port").toString() + ":" + dimmervalue;
                     logger.info("PWM restored to previous value: {}", result);
                     sendCommand(result);
-                    // int percent = 0;
-                    // try {
-                    // percent = (int) Math.round(dimmervalue / 2.55);
-                    // } catch (Exception ex) {
-                    // }
                     updateState(channelUID.getId(), DecimalType.valueOf(Integer.toString(dimmervalue)));
                 }
             }
@@ -181,7 +191,6 @@ public class MegaDPortsHandler extends BaseThingHandler {
         } else {
             logger.debug("Can't register {} at bridge. BridgeHandler is null.", this.getThing().getUID());
         }
-
         String[] rr = { getThing().getConfiguration().get("refresh").toString() };// .split("[.]");
         logger.debug("Thing {}, refresh interval is {} sec", getThing().getUID().toString(), rr[0]);
         float msec = Float.parseFloat(rr[0]);
@@ -315,12 +324,24 @@ public class MegaDPortsHandler extends BaseThingHandler {
                 } else if (channel.getUID().getId().equals(MegaDBindingConstants.CHANNEL_DIMMER)) {
                     if ("0".equals(updateRequest)) {
                         logger.debug("dimmer value is 0, do not save dimmer value");
+                        updateState(channel.getUID().getId(), PercentType.valueOf(Integer.toString(0)));
+                        return;
                     } else {
-                        dimmervalue = Integer.parseInt(updateRequest);
+                        try {
+                            dimmervalue = Integer.parseInt(updateRequest);
+                        } catch (Exception ignored) {
+                        }
                     }
                     int percent = 0;
                     try {
-                        percent = (int) Math.round(Integer.parseInt(updateRequest) / 2.55);
+                        int minval = Integer.parseInt(getThing().getConfiguration().get("min_pwm").toString());
+                        if (minval != 0) {
+                            int realval = (Integer.parseInt(updateRequest) - minval);// * 0.01;
+                            double divVal = (255 - minval) * 0.01;
+                            percent = (int) Math.round(realval / divVal);
+                        } else {
+                            percent = (int) Math.round(Integer.parseInt(updateRequest) / 2.55);
+                        }
                     } catch (Exception ex) {
                         logger.debug("Cannot convert to dimmer values string: '{}'", updateRequest);
                     }
@@ -446,18 +467,43 @@ public class MegaDPortsHandler extends BaseThingHandler {
                         logger.debug(" Cannot update click {}", ex.getLocalizedMessage());
                     }
                 } else if (channel.getUID().getId().equals(MegaDBindingConstants.CHANNEL_DIMMER)) {
-                    try {
-                        if (getCommands[2].equals("0")) {
-                            logger.debug("dimmer value is 0, do not save dimmer value");
-                        } else {
-                            dimmervalue = Integer.parseInt(getCommands[2]);
+                    if (!getCommands[0].equals("st")) {
+                        try {
+                            if (getCommands[2].equals("0")) {
+                                logger.debug("dimmer value is 0, do not save dimmer value");
+                                updateState(channel.getUID().getId(), PercentType.valueOf(Integer.toString(0)));
+                                return;
+                            } else {
+                                dimmervalue = Integer.parseInt(getCommands[2]);
+                            }
+                        } catch (Exception ignored) {
                         }
-                    } catch (Exception ignored) {
+
+                        int percent = 0;
+                        try {
+                            int minval = Integer.parseInt(getThing().getConfiguration().get("min_pwm").toString());
+                            if (minval != 0) {
+                                if (minval == dimmervalue) {
+                                    percent = 1;
+                                } else {
+                                    int realval = (dimmervalue - minval);// * 0.01;
+                                    double divVal = (255 - minval) * 0.01;
+                                    percent = (int) Math.round(realval / divVal);
+                                }
+                            } else {
+                                percent = (int) Math.round(dimmervalue / 2.55);
+                            }
+                        } catch (Exception ex) {
+                            logger.debug("Cannot convert to dimmer values. Error: '{}'", ex.toString());
+                        }
+                        updateState(channel.getUID().getId(), PercentType.valueOf(Integer.toString(percent)));
                     }
-                    try {
-                        updateState(channel.getUID().getId(), PercentType
-                                .valueOf(Integer.toString((int) Math.round(Integer.parseInt(getCommands[2]) / 2.55))));
-                    } catch (Exception ignored) {
+                } else if (channel.getUID().getId().equals(MegaDBindingConstants.CHANNEL_PWM)) {
+                    if (!getCommands[0].equals("st")) {
+                        try {
+                            updateState(channel.getUID().getId(), DecimalType.valueOf(getCommands[2]));
+                        } catch (Exception ignored) {
+                        }
                     }
                 } else if (channel.getUID().getId().equals(MegaDBindingConstants.CHANNEL_IB)) {
                     try {
@@ -509,9 +555,9 @@ public class MegaDPortsHandler extends BaseThingHandler {
                     }
                 } else if (channel.getUID().getId().equals(MegaDBindingConstants.CHANNEL_CONTACT)) {
                     if (OnOff != null) {
-                        if (OnOff.name() == "ON") {
+                        if (OnOff.name().equals("ON")) {
                             updateState(channel.getUID().getId(), OpenClosedType.CLOSED);
-                        } else if (OnOff.name() == "OFF") {
+                        } else if (OnOff.name().equals("OFF")) {
                             updateState(channel.getUID().getId(), OpenClosedType.OPEN);
                         }
                     }

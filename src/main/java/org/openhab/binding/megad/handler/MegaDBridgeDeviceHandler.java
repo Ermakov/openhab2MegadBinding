@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2021 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -14,6 +14,7 @@ package org.openhab.binding.megad.handler;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -48,8 +49,10 @@ public class MegaDBridgeDeviceHandler extends BaseBridgeHandler {
     private @Nullable final Map<String, MegaDBridgeExtenderPortHandler> extenderBridgeHandlerMap = new HashMap<>();
     private @Nullable final Map<String, MegaDBridgeExtenderPCA9685Handler> extenderPCA9685BridgeHandlerMap = new HashMap<>();
     private @Nullable final Map<String, MegaDEncoderHandler> megaDEncoderHandlerMap = new HashMap<>();
+    private @Nullable final ArrayList<MegaDRs485Handler> megaDRs485HandlerMap = new ArrayList<>();
     private final Map<String, String> portsvalues = new HashMap<>();
     private @Nullable ScheduledFuture<?> refreshPollingJob;
+    protected long lastRefresh = 0;
     int pingCount;
 
     @Nullable
@@ -102,6 +105,30 @@ public class MegaDBridgeDeviceHandler extends BaseBridgeHandler {
         } catch (IOException e) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Device not responding on ping");
             // logger.debug("proc error {}", e.getMessage());
+
+        }
+
+        long now = System.currentTimeMillis();
+        if (megaDRs485HandlerMap != null && !megaDRs485HandlerMap.isEmpty()) {
+            try {
+                for (MegaDRs485Handler handler : megaDRs485HandlerMap) {
+                    String address = handler.getThing().getConfiguration().get("address").toString();
+                    // logger.debug("address: {}", address);
+                    int interval = Integer.parseInt(handler.getThing().getConfiguration().get("refresh").toString());
+                    if (interval != 0) {
+                        if (now >= (handler.getLastRefresh() + (interval * 1000L))) {
+                            handler.updateData();
+                            handler.lastrefreshAdd(now);
+                            try {
+                                Thread.sleep(200);
+                            } catch (InterruptedException ignored) {
+                            }
+
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -183,7 +210,12 @@ public class MegaDBridgeDeviceHandler extends BaseBridgeHandler {
                             }
                         }
                     } else {
-                        String[] parsedStatus = getCommands[2].split("[;]");
+                        String[] parsedStatus = {};
+                        try {
+                            parsedStatus = getCommands[2].split("[;]");
+                        } catch (Exception ex) {
+                            parsedStatus = getCommands[1].split("[;]");
+                        }
                         for (int i = 0; parsedStatus.length > i; i++) {
                             megaportsHandler = portsHandlerMap.get(String.valueOf(i));
                             String[] mode = parsedStatus[i].split("[/]");
@@ -526,5 +558,33 @@ public class MegaDBridgeDeviceHandler extends BaseBridgeHandler {
     private void updateThingHandlerStatus(MegaDEncoderHandler megaDEncoderHandler, ThingStatus status,
             ThingStatusDetail statusDetail, String decript) {
         megaDEncoderHandler.updateStatus(status, statusDetail, decript);
+    }
+
+    // RS485
+    public void registerMegaRs485Listener(MegaDRs485Handler megaDrs485Handler) {
+        String rs485Address = megaDrs485Handler.getThing().getConfiguration().get("address").toString();
+
+        if (megaDRs485HandlerMap != null && !megaDRs485HandlerMap.isEmpty()) {
+            boolean isexist = false;
+            for (MegaDRs485Handler handler : megaDRs485HandlerMap) {
+                if (rs485Address.equals(handler.getThing().getConfiguration().get("address").toString())) {
+                    logger.debug("Device already exist");
+                    isexist = true;
+                }
+            }
+            if (!isexist) {
+                megaDRs485HandlerMap.add(megaDrs485Handler);
+            }
+        } else {
+            megaDRs485HandlerMap.add(megaDrs485Handler);
+        }
+    }
+
+    public void unregisterMegadRs485Listener(MegaDRs485Handler megaDrs485Handler) {
+        String rs485Address = megaDrs485Handler.getThing().getConfiguration().get("address").toString();
+        if (megaDRs485HandlerMap != null) {
+            megaDRs485HandlerMap.removeIf(
+                    handler -> rs485Address.equals(handler.getThing().getConfiguration().get("address").toString()));
+        }
     }
 }

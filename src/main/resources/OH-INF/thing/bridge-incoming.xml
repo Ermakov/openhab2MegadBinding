@@ -16,6 +16,11 @@
 				<description>Port of the LAN gateway</description>
 				<default>0</default>
 			</parameter>
+			<parameter name="discovery" type="boolean" required="true">
+				<label>Discovery</label>
+				<description></description>
+				<default>false</default>
+			</parameter>
 		</config-description>
 	</bridge-type>
 </thing:thing-descriptions>

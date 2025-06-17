@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2021 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -14,6 +14,7 @@ package org.openhab.binding.megad;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.core.thing.ThingTypeUID;
+import org.openhab.core.thing.type.ChannelTypeUID;
 
 /**
  * The {@link MegaDBindingConstants} class defines common constants, which are
@@ -68,6 +69,7 @@ public class MegaDBindingConstants {
     public static final String CHANNEL_CONTACT = "contact";
     public static final String CHANNEL_SMS_PHONE = "smsphone";
     public static final String CHANNEL_SMS_TEXT = "smstext";
+    public static final String CHANNEL_SMOOTH = "smoothtime";
 
     // i2c
     public static final String CHANNEL_I2C_TEMP = "temp";
@@ -100,8 +102,10 @@ public class MegaDBindingConstants {
     public static final String CHANNEL_VOLTAGE = "voltage";
     public static final String CHANNEL_CURRENT = "current";
     public static final String CHANNEL_ACTIVEPOWER = "activepower";
+    public static final String CHANNEL_ACTIVEENERGY = "actnrg";
     public static final String CHANNEL_APPARENTPOWER = "apparentpower";
     public static final String CHANNEL_REACTIVEPOWER = "reactivepower";
+    public static final String CHANNEL_REACTIVEENERGY = "reactnrg";
     public static final String CHANNEL_POWERFACTOR = "powerfactor";
     public static final String CHANNEL_PHASEANGLE = "phaseangle";
     public static final String CHANNEL_FREQUENCY = "frequency";
@@ -128,4 +132,9 @@ public class MegaDBindingConstants {
     public static final String CHANNEL_ENCODERDIGITS = "encoderdigits";
     // group
     public static final String CHANNEL_GROUP = "groupswitch";
+    // Dynamic channels
+    public static final ChannelTypeUID CHANNEL_DYNAMIC_I2C = new ChannelTypeUID(BINDING_ID, "i2cpar");
+    public static final String CHANNEL_MIDEAOPERMODE = "opermode";
+    public static final String CHANNEL_MIDEAFANMODE = "fanmode";
+    public static final String CHANNEL_MIDEATEMP = "mideatemperature";
 }

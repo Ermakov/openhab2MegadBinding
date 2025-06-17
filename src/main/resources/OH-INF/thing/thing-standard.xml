@@ -69,6 +69,7 @@
 			<channel id="out" typeId="out"/>
 			<channel id="ds2413" typeId="ds2413"/>
 			<channel id="dimmer" typeId="dimmer"/>
+			<channel id="pwm" typeId="pwm"/>
 			<channel id="m2signal" typeId="m2signal"/>
 			<channel id="click" typeId="click"/>
 			<channel id="onewire" typeId="onewire"/>
@@ -82,6 +83,7 @@
 			<channel id="i2cdisplay" typeId="i2cdisplay"/>
 			<channel id="smsphone" typeId="smsphone"/>
 			<channel id="smstext" typeId="smstext"/>
+			<channel id="smoothtime" typeId="smooth_time"/>
 		</channels>
 
 		<config-description>
@@ -98,6 +100,11 @@
 			<parameter name="ds2413_ch" type="text">
 				<label>DS2413 channel name</label>
 				<description>Only for DS2413</description>
+			</parameter>
+			<parameter name="min_pwm" type="text">
+				<label>Minimal pwm value for dimmer channel</label>
+				<description>Only for Dimmer channel</description>
+				<default>0</default>
 			</parameter>
 			<parameter name="correction" type="boolean" required="true">
 				<label>Mega-328 correction</label>

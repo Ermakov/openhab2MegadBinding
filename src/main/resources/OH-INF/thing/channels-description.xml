@@ -4,7 +4,13 @@
 	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
-
+	<channel-type id="i2cpar">
+		<item-type>Number</item-type>
+		<label>I2C parameter</label>
+		<description>Return value from i2c sensor selected parameter</description>
+		<state readOnly="true"/>
+		<config-description-ref uri="channel-type:megad:i2c-parameter"/>
+	</channel-type>
 	<channel-type id="in">
 		<item-type>Switch</item-type>
 		<label>Input</label>
@@ -29,6 +35,12 @@
 		<item-type>Dimmer</item-type>
 		<label>Dimmer</label>
 		<description>Dimmer used as output</description>
+		<!-- <config-description> -->
+		<!-- <parameter name="min_pwm" type="integer"> -->
+		<!-- <label>Minimal value of PWM</label> -->
+		<!-- <default>0</default> -->
+		<!-- </parameter> -->
+		<!-- </config-description> -->
 	</channel-type>
 	<channel-type id="pwm">
 		<item-type>Number</item-type>
@@ -268,7 +280,19 @@
 	<channel-type id="exportreactnrg">
 		<item-type>Number</item-type>
 		<label>Export reactive energy</label>
-		<description>export reactive energy</description>
+		<description>export active energy</description>
+		<state readOnly="true" pattern="%.2f"/>
+	</channel-type>
+	<channel-type id="reactnrg">
+		<item-type>Number</item-type>
+		<label>Reactive energy</label>
+		<description>Reactive energy</description>
+		<state readOnly="true" pattern="%.2f"/>
+	</channel-type>
+	<channel-type id="actnrg">
+		<item-type>Number</item-type>
+		<label>Active energy</label>
+		<description>Active energy</description>
 		<state readOnly="true" pattern="%.2f"/>
 	</channel-type>
 	<channel-type id="totalsyspwrdmd">
@@ -331,6 +355,41 @@
 		<description>total reactive energy</description>
 		<state readOnly="true" pattern="%.2f"/>
 	</channel-type>
+	<channel-type id="opermode">
+		<item-type>String</item-type>
+		<label>Operational mode</label>
+		<description>Operational mode</description>
+		<state>
+			<options>
+				<option value="OFF">OFF</option>
+				<option value="AUTO">AUTO</option>
+				<option value="COOL">COOL</option>
+				<option value="DRY">DRY</option>
+				<option value="HEAT">HEAT</option>
+				<option value="FAN">FAN</option>
+			</options>
+		</state>
+	</channel-type>
+	<channel-type id="fanmode">
+		<item-type>String</item-type>
+		<label>Fan mode</label>
+		<description>Fan mode</description>
+		<state>
+			<options>
+				<option value="OFF">OFF</option>
+				<option value="AUTO">AUTO</option>
+				<option value="HIGH">HIGH</option>
+				<option value="MEDIUM">MEDIUM</option>
+				<option value="LOW">LOW</option>
+			</options>
+		</state>
+	</channel-type>
+	<channel-type id="mideatemperature">
+		<item-type>Number</item-type>
+		<label>temperature</label>
+		<description>temperature</description>
+		<state pattern="%d"/>
+	</channel-type>
 
 
 	<channel-type id="line1">
@@ -363,6 +422,13 @@
 	<channel-type id="groupswitch">
 		<item-type>Switch</item-type>
 		<label>Group switch</label>
+	</channel-type>
+
+	<channel-type id="smooth_time" advanced="true">
+		<item-type>Number</item-type>
+		<label>Smooth</label>
+		<description>smooth</description>
+		<state pattern="%d"/>
 	</channel-type>
 
 </thing:thing-descriptions>
